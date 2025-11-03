@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import styles from "./page.module.css";
+import { trackPageView, trackButtonClick, trackEvent } from "@/lib/analytics";
 
 export default function EventPage() {
   const [pageViewTime] = useState<Date>(() => new Date());
@@ -13,13 +14,8 @@ export default function EventPage() {
   useEffect(() => {
     const entryTime = entryTimeRef.current;
 
-    // 여기에 Firebase Analytics 페이지뷰 이벤트 추가 예정
-    console.log("🔥 Analytics Event: page_view", {
-      page_title: "이벤트 페이지",
-      page_location: window.location.href,
-      page_path: "/event",
-      timestamp: entryTime.toISOString(),
-    });
+    // Firebase Analytics 페이지뷰 이벤트 전송
+    trackPageView("이벤트 페이지", "/event");
 
     // 페이지에 머문 시간 측정
     const interval = setInterval(() => {
@@ -34,7 +30,8 @@ export default function EventPage() {
       const duration = Math.floor(
         (exitTime.getTime() - entryTime.getTime()) / 1000
       );
-      console.log("🔥 Analytics Event: page_exit", {
+      // Firebase Analytics 페이지 이탈 이벤트 전송
+      trackEvent("page_exit", {
         page_title: "이벤트 페이지",
         duration_seconds: duration,
         timestamp: exitTime.toISOString(),
@@ -45,12 +42,10 @@ export default function EventPage() {
   const handleButtonClick = (buttonName: string) => {
     setButtonClicks((prev) => prev + 1);
 
-    // 여기에 Firebase Analytics 버튼 클릭 이벤트 추가 예정
-    console.log("🔥 Analytics Event: button_click", {
-      button_name: buttonName,
+    // Firebase Analytics 버튼 클릭 이벤트 전송
+    trackButtonClick(buttonName, {
       page: "/event",
       total_clicks: buttonClicks + 1,
-      timestamp: new Date().toISOString(),
     });
   };
 
@@ -134,8 +129,8 @@ export default function EventPage() {
             <li>페이지 체류 시간 측정</li>
           </ul>
           <p className={styles.note}>
-            💡 현재는 콘솔에 로그가 출력됩니다. Firebase Analytics 연동 후 실제
-            데이터가 전송됩니다.
+            💡 Firebase Analytics가 연동되어 실시간으로 데이터가 전송됩니다.
+            개발 환경에서는 콘솔에도 로그가 출력됩니다.
           </p>
         </div>
       </div>

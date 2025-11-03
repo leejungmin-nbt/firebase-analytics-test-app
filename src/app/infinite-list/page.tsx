@@ -3,6 +3,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import styles from "./page.module.css";
+import {
+  trackScrollLoadMore,
+  trackReachedListEnd,
+  trackScrollDepth,
+} from "@/lib/analytics";
 
 interface ListItem {
   id: number;
@@ -39,6 +44,7 @@ export default function InfiniteListPage() {
   const [loadCount, setLoadCount] = useState(0);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const scrollMilestonesRef = useRef<Set<number>>(new Set());
 
   const loadMore = useCallback(() => {
     if (loading || !hasMore) {
@@ -47,13 +53,8 @@ export default function InfiniteListPage() {
 
     setLoading(true);
 
-    // 여기에 Firebase Analytics 스크롤 이벤트 추가 예정
-    console.log("🔥 Analytics Event: scroll_load_more", {
-      current_items: items.length,
-      load_count: loadCount + 1,
-      scroll_percentage: scrollPercentage,
-      timestamp: new Date().toISOString(),
-    });
+    // Firebase Analytics 스크롤 이벤트 전송
+    trackScrollLoadMore(items.length, loadCount + 1, scrollPercentage);
 
     // 실제로는 API 호출, 여기서는 시뮬레이션
     setTimeout(() => {
@@ -65,10 +66,8 @@ export default function InfiniteListPage() {
       // 50개 이상이면 더 이상 로드하지 않음
       if (items.length + newItems.length >= 50) {
         setHasMore(false);
-        console.log("🔥 Analytics Event: reached_list_end", {
-          total_items: items.length + newItems.length,
-          timestamp: new Date().toISOString(),
-        });
+        // Firebase Analytics 리스트 끝 도달 이벤트 전송
+        trackReachedListEnd(items.length + newItems.length);
       }
     }, 1000);
   }, [loading, hasMore, items.length, loadCount, scrollPercentage]);
@@ -82,15 +81,16 @@ export default function InfiniteListPage() {
 
       setScrollPercentage(Math.round(scrolled));
 
-      // 스크롤 깊이 이벤트 (25%, 50%, 75%, 100%)
+      // 스크롤 깊이 이벤트 (25%, 50%, 75%, 100%) - 중복 전송 방지
       const milestones = [25, 50, 75, 100];
       milestones.forEach((milestone) => {
-        if (scrolled >= milestone && scrolled < milestone + 1) {
-          console.log("🔥 Analytics Event: scroll_depth", {
-            depth_percentage: milestone,
-            current_items: items.length,
-            timestamp: new Date().toISOString(),
-          });
+        if (
+          scrolled >= milestone &&
+          !scrollMilestonesRef.current.has(milestone)
+        ) {
+          scrollMilestonesRef.current.add(milestone);
+          // Firebase Analytics 스크롤 깊이 이벤트 전송
+          trackScrollDepth(milestone, items.length);
         }
       });
     };

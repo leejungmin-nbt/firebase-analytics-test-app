@@ -3,6 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import styles from "./page.module.css";
+import {
+  trackTodoAdded,
+  trackTodoDeleted,
+  trackTodoToggled,
+} from "@/lib/analytics";
 
 interface Todo {
   id: number;
@@ -33,34 +38,26 @@ export default function TodosPage() {
     setTodos([...todos, newTodo]);
     setInputValue("");
 
-    // 여기에 Firebase Analytics 이벤트 추가 예정
-    console.log("🔥 Analytics Event: todo_added", {
-      todoId: newTodo.id,
-      todoText: newTodo.text,
-    });
+    // Firebase Analytics 이벤트 전송
+    trackTodoAdded(newTodo.id, newTodo.text);
   };
 
   const handleDeleteTodo = (id: number) => {
     const todoToDelete = todos.find((todo) => todo.id === id);
     setTodos(todos.filter((todo) => todo.id !== id));
 
-    // 여기에 Firebase Analytics 이벤트 추가 예정
-    console.log("🔥 Analytics Event: todo_deleted", {
-      todoId: id,
-      todoText: todoToDelete?.text,
-    });
+    // Firebase Analytics 이벤트 전송
+    trackTodoDeleted(id, todoToDelete?.text);
   };
 
   const handleToggleTodo = (id: number) => {
     setTodos(
       todos.map((todo) => {
         if (todo.id === id) {
-          // 여기에 Firebase Analytics 이벤트 추가 예정
-          console.log("🔥 Analytics Event: todo_toggled", {
-            todoId: id,
-            completed: !todo.completed,
-          });
-          return { ...todo, completed: !todo.completed };
+          const newCompletedState = !todo.completed;
+          // Firebase Analytics 이벤트 전송
+          trackTodoToggled(id, newCompletedState);
+          return { ...todo, completed: newCompletedState };
         }
         return todo;
       })

@@ -3,11 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import styles from "./page.module.css";
-import {
-  trackScrollLoadMore,
-  trackReachedListEnd,
-  trackScrollDepth,
-} from "@/lib/analytics";
+import { trackScrollLoadMore, trackReachedListEnd } from "@/lib/analytics";
 
 interface ListItem {
   id: number;
@@ -44,7 +40,7 @@ export default function InfiniteListPage() {
   const [loadCount, setLoadCount] = useState(0);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
-  const scrollMilestonesRef = useRef<Set<number>>(new Set());
+  const lastScrollTimeRef = useRef<number>(0);
 
   const loadMore = useCallback(() => {
     if (loading || !hasMore) {
@@ -73,26 +69,25 @@ export default function InfiniteListPage() {
   }, [loading, hasMore, items.length, loadCount, scrollPercentage]);
 
   useEffect(() => {
+    const THROTTLE_MS = 200; // 200ms마다 최대 1번 실행
+
     const handleScroll = () => {
+      const now = Date.now();
+
+      // Throttle: 마지막 실행으로부터 200ms가 지나지 않았으면 무시
+      if (now - lastScrollTimeRef.current < THROTTLE_MS) {
+        return;
+      }
+
+      lastScrollTimeRef.current = now;
+
       const windowHeight = window.innerHeight;
       const documentHeight = document.documentElement.scrollHeight;
       const scrollTop = window.scrollY;
       const scrolled = (scrollTop / (documentHeight - windowHeight)) * 100;
 
+      // 스크롤 퍼센트 업데이트 (UI 표시용)
       setScrollPercentage(Math.round(scrolled));
-
-      // 스크롤 깊이 이벤트 (25%, 50%, 75%, 100%) - 중복 전송 방지
-      const milestones = [25, 50, 75, 100];
-      milestones.forEach((milestone) => {
-        if (
-          scrolled >= milestone &&
-          !scrollMilestonesRef.current.has(milestone)
-        ) {
-          scrollMilestonesRef.current.add(milestone);
-          // Firebase Analytics 스크롤 깊이 이벤트 전송
-          trackScrollDepth(milestone, items.length);
-        }
-      });
     };
 
     window.addEventListener("scroll", handleScroll);
@@ -199,13 +194,12 @@ export default function InfiniteListPage() {
       <div className={styles.infoBox}>
         <h3>트래킹되는 이벤트</h3>
         <ul>
-          <li>스크롤 깊이 (25%, 50%, 75%, 100%)</li>
-          <li>추가 아이템 로드</li>
-          <li>리스트 끝 도달</li>
+          <li>추가 아이템 로드 (scroll_load_more) - 로드 횟수 집계</li>
+          <li>리스트 끝 도달 (reached_list_end) - 전체 완독 여부</li>
         </ul>
         <p className={styles.note}>
-          💡 현재는 콘솔에 로그가 출력됩니다. Firebase Analytics 연동 후 실제
-          데이터가 전송됩니다.
+          💡 Firebase Analytics가 연동되어 실시간으로 데이터가 전송됩니다. 개발
+          환경에서는 콘솔에도 로그가 출력됩니다.
         </p>
       </div>
     </div>

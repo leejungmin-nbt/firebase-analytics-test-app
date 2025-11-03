@@ -12,7 +12,6 @@ export type AnalyticsEventName =
   | "page_exit"
   | "button_click"
   // 무한스크롤 이벤트
-  | "scroll_depth"
   | "scroll_load_more"
   | "reached_list_end"
   // 기타 Firebase 권장 이벤트나 커스텀 이벤트
@@ -37,7 +36,6 @@ export interface AnalyticsEventParams {
   total_clicks?: number;
 
   // 스크롤 파라미터
-  depth_percentage?: number;
   current_items?: number;
   load_count?: number;
   scroll_percentage?: number;
@@ -146,22 +144,6 @@ export const trackTodoToggled = (todoId: number, completed: boolean) => {
   trackEvent("todo_toggled", {
     todoId,
     completed,
-    timestamp: new Date().toISOString(),
-  });
-};
-
-/**
- * 스크롤 깊이 이벤트 트래킹
- * @param depthPercentage - 스크롤 깊이 (%)
- * @param currentItems - 현재 아이템 수
- */
-export const trackScrollDepth = (
-  depthPercentage: number,
-  currentItems: number
-) => {
-  trackEvent("scroll_depth", {
-    depth_percentage: depthPercentage,
-    current_items: currentItems,
     timestamp: new Date().toISOString(),
   });
 };

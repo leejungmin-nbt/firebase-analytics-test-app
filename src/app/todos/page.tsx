@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import styles from "./page.module.css";
 import {
   trackTodoAdded,
   trackTodoDeleted,
   trackTodoToggled,
+  trackEvent,
 } from "@/lib/analytics";
+import { getConfigString } from "@/lib/remoteConfig";
 
 interface Todo {
   id: number;
@@ -24,6 +26,16 @@ export default function TodosPage() {
   ]);
   const [inputValue, setInputValue] = useState("");
 
+  const buttonColor = getConfigString("todo_add_button_color", "red");
+
+  useEffect(() => {
+    trackEvent("ab_test_exposed", {
+      experiment_name: "todo_add_button_color",
+      variant: buttonColor,
+    });
+    console.log("A/B 테스트 버튼 색상:", buttonColor);
+  }, []);
+
   const handleAddTodo = () => {
     if (inputValue.trim() === "") {
       return;
@@ -38,8 +50,12 @@ export default function TodosPage() {
     setTodos([...todos, newTodo]);
     setInputValue("");
 
-    // Firebase Analytics 이벤트 전송
     trackTodoAdded(newTodo.id, newTodo.text);
+    trackEvent("button_click", {
+      button_name: "todo_add_button",
+      experiment_name: "todo_add_button_color",
+      variant: buttonColor,
+    });
   };
 
   const handleDeleteTodo = (id: number) => {
@@ -88,7 +104,11 @@ export default function TodosPage() {
             placeholder="할 일을 입력하세요..."
             className={styles.input}
           />
-          <button onClick={handleAddTodo} className={styles.addButton}>
+          <button
+            onClick={handleAddTodo}
+            className={styles.addButton}
+            style={{ backgroundColor: buttonColor }}
+          >
             추가
           </button>
         </div>

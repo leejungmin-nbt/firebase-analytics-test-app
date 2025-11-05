@@ -1,5 +1,6 @@
 import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getAnalytics, Analytics } from "firebase/analytics";
+import { getRemoteConfig, RemoteConfig } from "firebase/remote-config";
 
 // Firebase 설정
 const firebaseConfig = {
@@ -23,9 +24,15 @@ if (getApps().length === 0) {
 // Analytics 인스턴스 (클라이언트 사이드에서만 사용 가능)
 let analytics: Analytics | null = null;
 
-// 브라우저 환경에서만 Analytics 초기화
+// Remote Config 인스턴스 (클라이언트 사이드에서만 사용 가능)
+let remoteConfig: RemoteConfig | null = null;
+
+// 브라우저 환경에서만 Analytics와 Remote Config 초기화
 if (typeof window !== "undefined") {
   analytics = getAnalytics(app);
+  remoteConfig = getRemoteConfig(app);
+
+  remoteConfig.settings.minimumFetchIntervalMillis = 2000;
 }
 
-export { app, analytics };
+export { app, analytics, remoteConfig };

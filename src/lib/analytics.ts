@@ -59,10 +59,7 @@ export const trackEvent = (
 ) => {
   // Analytics가 초기화되지 않았으면 로그만 출력
   if (!analytics) {
-    console.log(
-      `🔥 Analytics Event (not initialized): ${eventName}`,
-      eventParams
-    );
+    console.log(`Analytics Event (not initialized): ${eventName}`, eventParams);
     return;
   }
 
@@ -72,7 +69,7 @@ export const trackEvent = (
 
     // 개발 환경에서는 콘솔에도 출력
     if (process.env.NODE_ENV === "development") {
-      console.log(`🔥 Analytics Event: ${eventName}`, eventParams);
+      console.log(`Analytics Event: ${eventName}`, eventParams);
     }
   } catch (error) {
     console.error("Analytics 이벤트 로깅 실패:", error);

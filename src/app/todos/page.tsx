@@ -10,6 +10,7 @@ import {
   trackEvent,
 } from "@/lib/analytics";
 import { getConfigString } from "@/lib/remoteConfig";
+import { useRemoteConfig } from "@/components/RemoteConfigProvider";
 
 interface Todo {
   id: number;
@@ -25,16 +26,26 @@ export default function TodosPage() {
     { id: 4, text: "일하기", completed: false },
   ]);
   const [inputValue, setInputValue] = useState("");
+  const [buttonColor, setButtonColor] = useState("f");
 
-  const buttonColor = getConfigString("todo_add_button_color", "red");
+  const { isInitialized } = useRemoteConfig();
+
+  console.log("isInitialized >> ", isInitialized);
 
   useEffect(() => {
-    trackEvent("ab_test_exposed", {
-      experiment_name: "todo_add_button_color",
-      variant: buttonColor,
-    });
-    console.log("A/B 테스트 버튼 색상:", buttonColor);
-  }, []);
+    //Remote Config(외부 시스템)와 동기화하기 위해 setState 사용
+    if (isInitialized) {
+      const color = getConfigString("todo_add_button_color", "red");
+      // eslint-disable-next-line
+      setButtonColor(color);
+
+      trackEvent("ab_test_exposed", {
+        experiment_name: "todo_add_button_color",
+        variant: color,
+      });
+      console.log("A/B 테스트 버튼 색상:", color);
+    }
+  }, [isInitialized]);
 
   const handleAddTodo = () => {
     if (inputValue.trim() === "") {
